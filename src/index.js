@@ -1,87 +1,47 @@
 const express = require('express');
-
-const cookieParser = require('cookie-parser');
-const path = require('path');
+const { routeHelper, sleep, addUserToDB } = require('./route');
 
 const app = express();
 
-app.use(express.urlencoded());
 app.use(express.json());
-app.use(cookieParser());
 
-app.post('/users/:userId', (req, res) => {
-    const { userId } = req.params || {};
-    const { test } = req.query || {};
-    const { name, age } = req.body || {};
+app.get('/test', routeHelper(async (req, res) => {
+    // await addUserToDB();
+    await sleep(500);
+    // await test(); // se desencadena un error que lo maneja routeHelper
 
-    const contentType = req.headers['content-type'];
-
-    console.log(req.headers);
-    console.log(req.cookies);
-    console.log(req.ip);
-
-    res.status(401).json({
-        id: userId,
-        name,
-        age,
-        test,
-        contentType,
-    });
-});
-
-app.get('/users/error', (req, res) => {
-    res.status(401).json({
-        error: 'hubo algun error xd',
-    });
-});
-
-app.get('/users/send', (req, res) => {
-    res.status(201).send('<h1>Hola como estas</h1>');
-});
-
-app.get('/users/send-buffer', (req, res) => {
-    res.send(new Buffer('esto es un buffer'));
-});
-
-app.get('/users/send-header', (req, res) => {
-    res.set({
-        'Content-Type': 'application/json',
-        'x-mi-cache': 'cacheId',
-    })
-
-    res.append('x-mi-cache-v2', 'cacheIdV2'); //append header
+    /*if (true) {
+        // lanzamos este error, para que routeHerlper lo maneje
+        throw new Error('Error crítico');
+    }*/
 
     res.json({
         status: 'ok',
-    })
-});
-
-app.get('/users/send-cookie', (req, res) => {
-    res.cookie('mi-cookie', '12345', {
-        path: '/',
-        maxAge: 100 * 60 * 60 * 24,
     });
+}));
 
-    res.json({
-        status: 'ok'
-    });
-});
+app.get('/test-2', routeHelper(async (req, res) =>{
+    // código
+}));
 
-app.get('/users/clear-cookie', (req, res) => {
-    res.clearCookie('mi-cookie');
+// sin routeHelper
+app.get('/test-0', async (req, res) =>{
+    try {
+        await addUserToDB();
+        await sleep(500);
 
-    res.json({
-        status: 'ok'
-    });
-});
-
-app.get('/users/redirect-location', (req, res) => {
-    res.redirect('https://google.com');
-});
-
-app.get('/users/download', (req, res) => {
-    //res.download(__dirname + 'file.txt');
-    res.download(path.join(__dirname, 'file.txt'), 'hola.txt');
+        res.json({
+            status: 'ok',
+        });
+    // manejamos el error, sin routeHelper
+    } catch (error) {
+        if (error.code) {
+            res.status(400).json({
+                status: 'error',
+                message: error.message,
+            });
+        }
+    }
 });
 
 app.listen(5000, () => console.log('API ready port: 5000...'));
