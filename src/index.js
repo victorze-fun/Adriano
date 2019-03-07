@@ -3,45 +3,50 @@ const { routeHelper, sleep, addUserToDB } = require('./route');
 
 const app = express();
 
-app.use(express.json());
+async function getUser() {
+    return {
+        id: 123,
+        name: 'victor',
+    }
+}
 
-app.get('/test', routeHelper(async (req, res) => {
-    // await addUserToDB();
-    await sleep(500);
-    // await test(); // se desencadena un error que lo maneja routeHelper
+// todas las rutas ejecutan este middleware
+app.use((req, res, next) => {
+    if (req.ip == '182.15.25.48') {
+        next(new Error('error!!!'));
+    }
+    next();
+});
 
-    /*if (true) {
-        // lanzamos este error, para que routeHerlper lo maneje
-        throw new Error('Error crítico');
-    }*/
+const foo = async (req, res, next) => {
+    const user = await getUser();
+
+    req.locals = {
+        user,
+    };
+
+    next();
+};
+
+// el middleware que verifica la ip se ejecuta antes
+app.get('/test', async (req, res) => {
+    const user = req.locals.user;
 
     res.json({
         status: 'ok',
+        user,
     });
-}));
+});
 
-app.get('/test-2', routeHelper(async (req, res) =>{
-    // código
-}));
+// el middleware que verifica la ip se ejecuta antes
+// leugo se ejecuta el middleware foo
+app.get('/test-2', foo, async (req, res) => {
+    const user = req.locals.user;
 
-// sin routeHelper
-app.get('/test-0', async (req, res) =>{
-    try {
-        await addUserToDB();
-        await sleep(500);
-
-        res.json({
-            status: 'ok',
-        });
-    // manejamos el error, sin routeHelper
-    } catch (error) {
-        if (error.code) {
-            res.status(400).json({
-                status: 'error',
-                message: error.message,
-            });
-        }
-    }
+    res.json({
+        status: 'ok',
+        user,
+    });
 });
 
 app.listen(5000, () => console.log('API ready port: 5000...'));
