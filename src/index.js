@@ -10,7 +10,7 @@ async function getUser() {
     }
 }
 
-// todas las rutas ejecutan este middleware
+// global: todas las rutas ejecutan este middleware
 app.use((req, res, next) => {
     if (req.ip == '182.15.25.48') {
         next(new Error('error!!!'));
